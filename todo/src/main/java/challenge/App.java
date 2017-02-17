@@ -28,11 +28,11 @@ public class App
 
             portNum = Integer.parseInt(portStr);
             if (portStr.length() != 4) {
-                System.out.println("Wrong input. Please Restart.");
+                System.out.println("Invalid input. Please Restart.");
                 return;
             }
         } catch(NumberFormatException e) {
-            System.out.println("Wrong input. Please Restart.");
+            System.out.println("Invalid input. Please Restart.");
             return;
         }
 
