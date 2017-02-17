@@ -2,50 +2,74 @@ package challenge;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
-import javax.print.attribute.standard.Media;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.io.IOException;
-import java.util.HashMap;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 /**
- * Created by Kyung Ho Song on 2/13/2017.
+ * Class that handles requests
  */
 @Path("")
 public class Resource {
     public static String pattern = "^\\d{5}[a-z]{2}\\d[-][a-z]{2}\\d{2}[-]\\d{2}[a-z]\\d[-][a-z]\\d[a-z]\\d[-][a-z]{3}\\d[a-z]\\d{3}[a-z]{2}\\d{2}$";
     public static Pattern r;
     public static Matcher m;
+    public static ConnectToPostgre database = new ConnectToPostgre("localhost:5432", "challenge", "postgres", "");
+    public DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:sss");
+    public ObjectMapper mapper = new ObjectMapper();
+
 
     @GET
     @Path("todos")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
     public String getTodo() {
-        return "list of todos";
+        List todoList = database.operations.getTodos();
+        mapper.setDateFormat(dateFormat);
+        String returnVal = "";
+        try {
+            returnVal = mapper.writeValueAsString(todoList);
+        } catch(Exception e) {
+            System.err.println(e.getMessage());
+        }
+
+        return returnVal;
     }
 
     @GET
-    @Path("todos/:{todo_id}/tasks")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Path("todos/{todo_id}/tasks")
+    @Produces(MediaType.APPLICATION_JSON)
     public String getSpecTodo(@PathParam("todo_id") String todo_id) {
         r = Pattern.compile(pattern);
         m = r.matcher(todo_id);
-
+        String returnVal = "";
         if (m.find()) {
-            return "tasks found";
+            List taskList = database.operations.getTasks(todo_id);
+            mapper.setDateFormat(dateFormat);
+
+            try {
+                returnVal = mapper.writeValueAsString(taskList);
+            } catch(Exception e) {
+                System.err.println(e.getMessage());
+            }
         } else {
             return "Invalid todo ID.";
         }
+        return returnVal;
     }
 
     @GET
-    @Path("todos/:{todo_id}/tasks/:{task_id}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Path("todos/{todo_id}/tasks/{task_id}")
+    @Produces(MediaType.APPLICATION_JSON)
     public String getTask(@PathParam("todo_id") String todo_id,
                           @PathParam("task_id") String task_id) {
         r = Pattern.compile(pattern);
         m = r.matcher(todo_id);
+        mapper.setDateFormat(dateFormat);
 
         if(!m.find()) {
             return "Invalid todo ID";
@@ -56,40 +80,65 @@ public class Resource {
         if(!m.find()) {
             return "Invalid task ID";
         }
+        String returnVal = "";
+        try {
+            Task returnedTask = database.operations.getTask(todo_id, task_id);
+            if (returnedTask.id == null) {
+                return "";
+            }
+            returnVal = mapper.writeValueAsString(returnedTask);
 
-        return "task found";
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
+
+        return returnVal;
     }
 
     @GET
-    @Path("todos/:{todo_id}/tasks/done")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Path("todos/{todo_id}/tasks/done")
+    @Produces(MediaType.APPLICATION_JSON)
     public String getFinished(@PathParam("todo_id") String todo_id) {
         r = Pattern.compile(pattern);
         m = r.matcher(todo_id);
 
+        String returnVal = "";
         if (m.find()) {
-            //find finished tasks and return them
+            List taskList = database.operations.getTasksStatus(todo_id, true);
+            mapper.setDateFormat(dateFormat);
 
-            return "todo found";
+            try {
+                returnVal = mapper.writeValueAsString(taskList);
+            } catch(Exception e) {
+                System.err.println(e.getMessage());
+            }
         } else {
             return "Invalid todo ID.";
         }
+        return returnVal;
     }
 
     @GET
-    @Path("todos/:{todo_id}/tasks/not-done")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Path("todos/{todo_id}/tasks/not-done")
+    @Produces(MediaType.APPLICATION_JSON)
     public String getUnfinished(@PathParam("todo_id") String todo_id) {
         r = Pattern.compile(pattern);
         m = r.matcher(todo_id);
 
+        String returnVal = "";
         if (m.find()) {
-            //find unfinished tasks and return them
+            List taskList = database.operations.getTasksStatus(todo_id, false);
+            mapper.setDateFormat(dateFormat);
 
-            return "todo found";
+            try {
+                returnVal = mapper.writeValueAsString(taskList);
+            } catch(Exception e) {
+                System.err.println(e.getMessage());
+            }
         } else {
             return "Invalid todo ID.";
         }
+        return returnVal;
     }
 
     @POST
@@ -97,98 +146,62 @@ public class Resource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public String createTodo(String data) throws IOException{
-        //create todo
-        HashMap<String, String> todo = new ObjectMapper().readValue(data, HashMap.class);
-        System.out.println(todo.get("name"));
-        System.out.println(data.getClass().getName());
+        //create a todo.
+        mapper.setDateFormat(dateFormat);
+        Todo temp = mapper.readValue(data, Todo.class);
 
-        String jsonInString = new ObjectMapper().writeValueAsString(data);
-        return jsonInString;
+        temp = database.operations.createTodo(temp.name);
+
+        return mapper.writeValueAsString(temp);
     }
 
     @POST
-    @Path("todos/:{todo_id}/tasks")
+    @Path("todos/{todo_id}/tasks")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public String createTask(String data, @PathParam("todo_id") String todo_id) throws IOException{
+        mapper.setDateFormat(dateFormat);
+        Task temp = mapper.readValue(data, Task.class);
 
-        r = Pattern.compile(pattern);
-        m = r.matcher(todo_id);
+        temp = database.operations.createTask(todo_id, temp.name, temp.description);
 
-        if (m.find()) {
-            //find unfinished tasks and return them
-            //create task
-            HashMap<String, String> task = new ObjectMapper().readValue(data, HashMap.class);
-            for (String key: task.keySet()) {
-                System.out.println(key + " : " + task.get(key));
-            }
-            return "task created";
-        } else {
-            return "Invalid todo ID.";
-        }
+        return mapper.writeValueAsString(temp);
+
 
     }
     @PUT
-    @Path("todos/:{todo_id}/tasks/:{task_id}")
+    @Path("todos/{todo_id}/tasks/{task_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public String updateTask(String data, @PathParam("todo_id") String todo_id,
                              @PathParam("task_id") String task_id) throws IOException{
+        mapper.setDateFormat(dateFormat);
+        Task temp = mapper.readValue(data, Task.class);
 
-        r = Pattern.compile(pattern);
-        m = r.matcher(todo_id);
+        temp = database.operations.updateTask(todo_id, task_id, temp.name, temp.description, temp.status);
 
-        if (m.find()) {
-            //get the task ids of that "todo" and look for the task
-            boolean found = true;
-            if(found) {
-                HashMap<String, String> task = new ObjectMapper().readValue(data, HashMap.class);
-                for (String key: task.keySet()) {
-                    System.out.println(key + " : " + task.get(key));
-                }
-                return "task updated";
-            }
-
-            return "Invalid task id.";
-        } else {
-            return "Invalid todo ID.";
-        }
+        return mapper.writeValueAsString(temp);
 
     }
 
     @DELETE
-    @Path("todos/:{todo_id}")
+    @Path("todos/{todo_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public String deleteTodo(@PathParam("todo_id") String todo_id) {
-        r = Pattern.compile(pattern);
-        m = r.matcher(todo_id);
+        database.operations.deleteTodo(todo_id);
 
-        if(m.find()) {
-            //find todo that matches todo_id and delete
-            return "todo deleted";
-        }
-        return "todo not found";
+        return "{}";
     }
 
     @DELETE
-    @Path("todos/:{todo_id}/tasks/:{task_id}")
+    @Path("todos/{todo_id}/tasks/{task_id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public String deleteTask(@PathParam("todo_id") String todo_id,
                              @PathParam("task_id") String task_id) {
-        r = Pattern.compile(pattern);
-        m = r.matcher(todo_id);
+    database.operations.deleteTask(todo_id, task_id);
 
-        if(m.find()) {
-            //find todo that matches todo_id and look for the teask
-            boolean found = true;
-            if(found) {
-                //delete the task
-                return "task deleted";
-            }
-            return "task not found";
-        }
-        return "todo not found";
+    return "{}";
     }
 }

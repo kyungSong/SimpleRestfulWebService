@@ -78,5 +78,13 @@
       <version>1.9.13</version>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/com.github.mifmif/generex -->
+    <dependency>
+      <groupId>com.github.mifmif</groupId>
+      <artifactId>generex</artifactId>
+      <version>1.0.2</version>
+    </dependency>
+
+
   </dependencies>
 </project>

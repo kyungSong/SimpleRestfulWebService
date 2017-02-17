@@ -1,19 +1,16 @@
 package challenge;
 
 import java.sql.Timestamp;
-import java.util.Date;
 /**
- * Created by Kyung Ho Song on 2/16/2017.
+ * POJO for todo.
  */
 public class Todo {
-    private String id;
-    private String name;
-    private Timestamp created;
+    public String id;
+    public String name;
+    public Timestamp created;
 
-    public Todo(String id_in, String name_in) {
-        id = id_in;
-        name = name_in;
-        Date date = new Date();
-        created = new Timestamp(date.getTime());
+    @Override
+    public String toString() {
+        return String.format("id: %s, name: %s, created: %s", this.id, this.name, this.created);
     }
 }

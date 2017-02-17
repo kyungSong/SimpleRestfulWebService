@@ -1,23 +1,19 @@
 package challenge;
 
 import java.sql.Timestamp;
-import java.util.Date;
 /**
- * Created by Kyung Ho Song on 2/16/2017.
+ * POJO for task.
  */
-public class Task {
-    private String id;
-    private String name;
-    private String description;
-    private String status;
-    private Timestamp created;
+class Task {
+    public String id;
+    public String name;
+    public String description;
+    public String status;
+    public Timestamp created;
 
-    public Task(String id_in, String name_in, String description_in, String status_in) {
-        id = id_in;
-        name = name_in;
-        description = description_in;
-        status = status_in;
-        Date date = new Date();
-        created = new Timestamp(date.getTime());
+    @Override
+    public String toString() {
+        return String.format("id: %s, name: %s, description: %s, status: %s, created: %s", this.id, this.name, this.description, this.status, this.created);
     }
+
 }
