@@ -1,6 +1,9 @@
 package challenge;
 
 import java.sql.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 
 /**
  * Class to connect to postgresql database using JDBC driver.
@@ -8,35 +11,39 @@ import java.sql.*;
 public class ConnectToPostgre {
     public Connection conn = null;
     public Operations operations = null;
+    private final static Logger logger = Logger.getLogger(ConnectToPostgre.class.getName());
 
     public ConnectToPostgre(String host, String database, String user, String password) {
         //localhost:5432, "challenge", "postgres", ""
         conn = ConnectToDatabase(host, database, user, password);
         operations = new Operations(conn);
 
+
         //test1(conn);
     }
 
     public Connection ConnectToDatabase(String host, String database, String user, String password) {
         Connection conn = null;
+        logger.info("connecting to database");
         try {
             Class.forName("org.postgresql.Driver");
             String url = "jdbc:postgresql://" + host + "/" + database;
             conn = DriverManager.getConnection(url, user, password);
         } catch (Exception e) {
+            logger.warning("error occurred while connecting to database. Error is: " + e.getClass().getName()+ ": " + e.getMessage());
             e.printStackTrace();
             System.err.println(e.getClass().getName()+ ": " + e.getMessage());
-            System.exit(1);
+            return conn;
         }
-        System.out.println("Database Open");
         return conn;
     }
 
     public void closeDatabase(Connection conn) {
         try {
+            logger.info("attempting to close connection with database.");
             conn.close();
-            System.out.println("closed!");
         } catch(Exception e) {
+            logger.warning("error occurred while attempting to close connection with database. Error message is: " + e.getMessage());
             System.err.println(e.getMessage());
         }
     }
