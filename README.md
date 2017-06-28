@@ -1,4 +1,6 @@
-Read me for data-engineering-challenge.
+A simple web service built using jetty and javax.
+
+Stores tasks and todos as well as retrieving them from a relational database.
 
 For persistent storage of todos and tasks I used Postgresql database.
 Database name is "challenge" and "challenge" holds two relations
